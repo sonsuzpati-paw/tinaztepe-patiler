@@ -107,9 +107,9 @@ export default function App() {
     try {
       await dbService.saveUser(u);
       setUsers((prev) => [...prev, u]);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('Kullanıcı eklenirken bir veritabanı hatası oluştu.');
+      alert(`Kullanıcı eklenirken bir veritabanı hatası oluştu: ${err?.message || JSON.stringify(err)}`);
     }
   };
 
@@ -121,9 +121,9 @@ export default function App() {
         setCurrentUser(updatedUser);
         localStorage.setItem('tinaztepe_current_user', JSON.stringify(updatedUser));
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('Profil güncellenirken bir veritabanı hatası oluştu.');
+      alert(`Profil güncellenirken bir veritabanı hatası oluştu: ${err?.message || JSON.stringify(err)}`);
     }
   };
 
@@ -152,9 +152,9 @@ export default function App() {
       await dbService.saveLog(initialLog);
       setLogs((prev) => [initialLog, ...prev]);
       setShowAddAnimal(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('Yeni pati eklenirken bir veritabanı hatası oluştu.');
+      alert(`Yeni pati eklenirken bir veritabanı hatası oluştu: ${err?.message || JSON.stringify(err)}`);
     }
   };
 
@@ -167,9 +167,9 @@ export default function App() {
       if (selectedAnimal && selectedAnimal.id === updatedAnimal.id) {
         setSelectedAnimal(updatedAnimal);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('Pati güncellenirken bir veritabanı hatası oluştu.');
+      alert(`Pati güncellenirken bir veritabanı hatası oluştu: ${err?.message || JSON.stringify(err)}`);
     }
   };
 
@@ -180,9 +180,9 @@ export default function App() {
       // İlgili hayvanın tüm loglarını da temizle
       setLogs((prev) => prev.filter((l) => l.animalId !== id));
       setSelectedAnimal(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('Pati kaydı silinirken bir veritabanı hatası oluştu.');
+      alert(`Pati kaydı silinirken bir veritabanı hatası oluştu: ${err?.message || JSON.stringify(err)}`);
     }
   };
 
@@ -190,9 +190,9 @@ export default function App() {
     try {
       await dbService.saveLog(newL);
       setLogs((prev) => [newL, ...prev]);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('Günlük kaydı eklenirken bir veritabanı hatası oluştu.');
+      alert(`Günlük kaydı eklenirken bir veritabanı hatası oluştu: ${err?.message || JSON.stringify(err)}`);
     }
   };
 
@@ -200,9 +200,9 @@ export default function App() {
     try {
       await dbService.deleteLog(logId);
       setLogs((prev) => prev.filter((l) => l.id !== logId));
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('Günlük kaydı silinirken bir veritabanı hatası oluştu.');
+      alert(`Günlük kaydı silinirken bir veritabanı hatası oluştu: ${err?.message || JSON.stringify(err)}`);
     }
   };
 
@@ -210,9 +210,9 @@ export default function App() {
     try {
       await dbService.saveAlert(newAlert);
       setAlerts((prev) => [newAlert, ...prev]);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('Duyuru eklenirken bir veritabanı hatası oluştu.');
+      alert(`Duyuru eklenirken bir veritabanı hatası oluştu: ${err?.message || JSON.stringify(err)}`);
     }
   };
 
@@ -220,9 +220,9 @@ export default function App() {
     try {
       await dbService.deleteAlert(alertId);
       setAlerts((prev) => prev.filter((m) => m.id !== alertId));
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('Duyuru silinirken bir veritabanı hatası oluştu.');
+      alert(`Duyuru silinirken bir veritabanı hatası oluştu: ${err?.message || JSON.stringify(err)}`);
     }
   };
 
