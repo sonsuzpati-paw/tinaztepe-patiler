@@ -33,11 +33,14 @@ interface AnimalDetailModalProps {
   users: User[];
   logs: LogEntry[];
   currentUser: User | null;
+  alerts: any[];
   onClose: () => void;
   onUpdateAnimal: (updatedAnimal: Animal) => void;
   onDeleteAnimal: (animalId: string) => void;
   onAddLog: (newLog: LogEntry) => void;
   onDeleteLog: (logId: string) => void;
+  onAddAlert: (alert: any) => void;
+  onDeleteAlert: (alertId: string) => void;
 }
 
 export default function AnimalDetailModal({
@@ -45,11 +48,14 @@ export default function AnimalDetailModal({
   users,
   logs,
   currentUser,
+  alerts,
   onClose,
   onUpdateAnimal,
   onDeleteAnimal,
   onAddLog,
-  onDeleteLog
+  onDeleteLog,
+  onAddAlert,
+  onDeleteAlert
 }: AnimalDetailModalProps) {
   // Photo carousel index
   const [photoIndex, setPhotoIndex] = useState(0);
@@ -169,6 +175,48 @@ export default function AnimalDetailModal({
 
   const prevPhoto = () => {
     setPhotoIndex((prev) => (prev - 1 + animal.photos.length) % animal.photos.length);
+  };
+
+  // --- Kayip/Bulundu Module ---
+  const lostAlert = alerts.find(
+    (a) => a.title && a.title.includes(animal.name) && a.title.includes('KAYIP')
+  );
+
+  const handleMarkLost = () => {
+    if (!currentUser) return;
+    if (!window.confirm(`${animal.name} adlı can dostu kayıp olarak işaretlemek istiyor musunuz? Otomatik ACiL duyuru oluşturulacak.`)) return;
+    const updated = { ...animal, status: 'kayıp' as any };
+    onUpdateAnimal(updated);
+    const autoAlert = {
+      id: 'lost_' + animal.id + '_' + Date.now(),
+      title: `🚨 KAYIP: ${animal.name} (${animal.type === 'kedi' ? 'Kedi' : 'Köpek'})`,
+      content: `${animal.name} adlı can dostumuz ${animal.location} bölgesinde kayboldu! Son görüldüğü konum: ${animal.locationDetails || animal.location}. Gören veya bilgisi olan lütfen hemen ekibi bilgilendirsin. Bildiren: ${currentUser.name}`,
+      date: new Date().toISOString(),
+      userId: currentUser.id,
+      userName: currentUser.name,
+      urgency: 'acil' as any
+    };
+    onAddAlert(autoAlert);
+  };
+
+  const handleMarkFound = () => {
+    if (!currentUser) return;
+    if (!window.confirm(`${animal.name} bulundu olarak işaretlensin ve ACiL duyuru kapatılsın mı?`)) return;
+    const updated = { ...animal, status: 'sağlıklı' as any };
+    onUpdateAnimal(updated);
+    if (lostAlert) onDeleteAlert(lostAlert.id);
+    const foundLog = {
+      id: 'found_' + Date.now(),
+      animalId: animal.id,
+      animalName: animal.name,
+      category: 'diğer' as any,
+      title: '✅ Bulundu!',
+      description: `${animal.name}, ${currentUser.name} tarafından bulundu ve sağlıklı duruma geçirildi. Kayıp duyurusu kapatıldı.`,
+      date: new Date().toISOString(),
+      userId: currentUser.id,
+      userName: currentUser.name
+    };
+    onAddLog(foundLog);
   };
 
   return (
@@ -352,31 +400,73 @@ export default function AnimalDetailModal({
                 <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-slate-100 border border-slate-100 shadow-sm flex items-center justify-center">
                   <img
                     src={animal.photos[photoIndex]}
-                    alt={animal.name}
-                    className="w-full h-full object-cover"
+                    alt={`${animal.name} - Fotoğ ${photoIndex + 1}`}
+                    className="w-full h-full object-cover transition-opacity duration-300"
                     referrerPolicy="no-referrer"
                   />
+
+                  {/* Kayip Banner */}
+                  {animal.status === 'kayıp' && (
+                    <div className="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded-lg animate-pulse">
+                      ❓ KAYIP
+                    </div>
+                  )}
 
                   {animal.photos.length > 1 && (
                     <>
                       <button
                         onClick={prevPhoto}
-                        className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 text-white p-1.5 rounded-full hover:bg-black/60 cursor-pointer"
+                        className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-1.5 rounded-full hover:bg-black/70 cursor-pointer transition-colors"
                       >
                         <ChevronLeft className="w-4 h-4" />
                       </button>
                       <button
                         onClick={nextPhoto}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 text-white p-1.5 rounded-full hover:bg-black/60 cursor-pointer"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-1.5 rounded-full hover:bg-black/70 cursor-pointer transition-colors"
                       >
                         <ChevronRight className="w-4 h-4" />
                       </button>
-                      <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 bg-black/50 text-white px-2 py-0.5 rounded text-[10px] font-bold">
-                        {photoIndex + 1} / {animal.photos.length}
+                      {/* Dot indicators */}
+                      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1">
+                        {animal.photos.map((_, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setPhotoIndex(idx)}
+                            className={`rounded-full transition-all cursor-pointer ${
+                              idx === photoIndex
+                                ? 'w-4 h-2 bg-white'
+                                : 'w-2 h-2 bg-white/50 hover:bg-white/80'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <div className="absolute top-2 right-2 bg-black/50 text-white px-2 py-0.5 rounded text-[10px] font-bold">
+                        {photoIndex + 1}/{animal.photos.length}
                       </div>
                     </>
                   )}
                 </div>
+
+                {/* Kayip/Bulundu Aksiyon Butonlari */}
+                {currentUser && (
+                  <div className="flex gap-2">
+                    {animal.status !== 'kayıp' ? (
+                      <button
+                        onClick={handleMarkLost}
+                        className="flex-1 py-2 px-3 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                      >
+                        ❓ Kayıp Bildir
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleMarkFound}
+                        className="flex-1 py-2 px-3 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-1.5 cursor-pointer transition-colors animate-pulse"
+                      >
+                        ✅ Bulundu! Durumu Kapat
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 {/* Core characteristics */}
                 <div className="bg-slate-50 p-4.5 rounded-2xl space-y-2.5 border border-slate-100 text-xs text-slate-700">
@@ -565,61 +655,78 @@ export default function AnimalDetailModal({
                     </form>
                   )}
 
-                  {/* JOURNAL LOG LIST */}
+                  {/* JOURNAL LOG LIST — TIMELINE */}
                   {animalLogs.length === 0 ? (
-                    <div className="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-1.5">
+                    <div className="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
                       <Activity className="w-8 h-8 text-slate-300 mx-auto mb-2" />
                       <p className="text-slate-600 text-xs font-semibold">Henüz bu can için gözlem günlüğü girilmemiş.</p>
                       <p className="text-[10px] text-slate-400 mt-1">İleride referans olması için mama ve aşı gözlemlerinizi girin!</p>
                     </div>
                   ) : (
-                    <div className="space-y-3.5 max-h-[350px] overflow-y-auto pr-1">
-                      {animalLogs
-                        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                        .map((log) => {
-                          const catDet = getCategoryDetails(log.category);
-                          return (
-                            <div key={log.id} className="p-3.5 rounded-xl border border-slate-100/80 bg-slate-50/50 space-y-2">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${catDet.bg}`}>
-                                    {catDet.icon}
-                                    {catDet.label}
-                                  </span>
-                                  <h4 className="font-bold text-slate-850 text-xs sm:text-sm">
-                                    {log.title}
-                                  </h4>
+                    <div className="relative max-h-[420px] overflow-y-auto pr-1">
+                      {/* Dikey zaman çizgisi */}
+                      <div className="absolute left-[18px] top-3 bottom-3 w-0.5 bg-slate-100 rounded-full" />
+                      <div className="space-y-4">
+                        {animalLogs
+                          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                          .map((log, idx) => {
+                            const catDet = getCategoryDetails(log.category);
+                            const logDate = new Date(log.date);
+                            const isFirst = idx === 0;
+                            return (
+                              <div key={log.id} className="flex gap-3 relative">
+                                {/* Timeline dot + icon */}
+                                <div className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center border-2 z-10 ${
+                                  isFirst ? 'border-indigo-300 bg-indigo-50' : 'border-slate-200 bg-white'
+                                }`}>
+                                  {catDet.icon}
                                 </div>
 
-                                {currentUser?.isAdmin && (
-                                  <button
-                                    onClick={() => {
-                                      if (confirm('Bu günlük girişini silmek istediğinizden emin misiniz?')) {
-                                        onDeleteLog(log.id);
-                                      }
-                                    }}
-                                    title="Günlüğü Sil (Sadece Admin)"
-                                    className="text-red-600 hover:text-red-800 p-1 hover:bg-red-50 rounded"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                )}
-                              </div>
+                                {/* Card */}
+                                <div className={`flex-1 rounded-xl border p-3 space-y-1.5 ${
+                                  isFirst ? 'border-indigo-100 bg-indigo-50/40' : 'border-slate-100 bg-slate-50/50'
+                                }`}>
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="min-w-0">
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded border ${catDet.bg}`}>
+                                          {catDet.label}
+                                        </span>
+                                        {isFirst && (
+                                          <span className="text-[9px] font-bold text-indigo-600 bg-indigo-100 px-1.5 py-0.5 rounded">Son Kayıt</span>
+                                        )}
+                                      </div>
+                                      <h4 className="font-bold text-slate-800 text-xs mt-1">{log.title}</h4>
+                                    </div>
+                                    {(currentUser?.isAdmin || currentUser?.id === log.userId) && (
+                                      <button
+                                        onClick={() => {
+                                          if (confirm('Bu günlük girişini silmek istediğinizden emin misiniz?')) {
+                                            onDeleteLog(log.id);
+                                          }
+                                        }}
+                                        title="Günlüğü Sil"
+                                        className="shrink-0 text-red-400 hover:text-red-600 p-1 hover:bg-red-50 rounded cursor-pointer"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
+                                  </div>
 
-                              <p className="text-slate-600 text-xs leading-relaxed whitespace-pre-wrap">
-                                {log.description}
-                              </p>
+                                  <p className="text-slate-600 text-xs leading-relaxed whitespace-pre-wrap">{log.description}</p>
 
-                              <div className="flex items-center justify-between text-[10px] text-slate-400 border-t border-slate-150 pt-2 pb-0.5">
-                                <p>Yazar: <span className="font-semibold text-slate-600">{log.userName}</span></p>
-                                <p className="flex items-center gap-1">
-                                  <Calendar className="w-3 h-3" />
-                                  {new Date(log.date).toLocaleString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                                </p>
+                                  <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1.5 border-t border-slate-100">
+                                    <p>📝 <span className="font-semibold text-slate-500">{log.userName}</span></p>
+                                    <p className="flex items-center gap-1">
+                                      <Calendar className="w-3 h-3" />
+                                      {logDate.toLocaleString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                    </p>
+                                  </div>
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                      </div>
                     </div>
                   )}
                 </div>

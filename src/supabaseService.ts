@@ -49,6 +49,9 @@ const mapAnimalFromDB = (data: any): Animal => ({
   age: data.age || undefined,
   location: data.location,
   locationDetails: data.location_details || undefined,
+  lat: data.lat || undefined,
+  lng: data.lng || undefined,
+  region: data.region || undefined,
   photos: data.photos || [],
   status: data.status,
   createdAt: data.created_at,
@@ -64,6 +67,9 @@ const mapAnimalToDB = (animal: Animal) => ({
   age: animal.age || null,
   location: animal.location,
   location_details: animal.locationDetails || null,
+  lat: animal.lat || null,
+  lng: animal.lng || null,
+  region: animal.region || null,
   photos: animal.photos,
   status: animal.status,
   created_at: animal.createdAt,
@@ -78,6 +84,8 @@ const mapLogFromDB = (data: any): LogEntry => ({
   title: data.title,
   description: data.description,
   date: data.date,
+  isScheduled: data.is_scheduled || false,
+  scheduledDate: data.scheduled_date || undefined,
   userId: data.user_id,
   userName: data.user_name
 });
@@ -90,6 +98,8 @@ const mapLogToDB = (log: LogEntry) => ({
   title: log.title,
   description: log.description,
   date: log.date,
+  is_scheduled: log.isScheduled || false,
+  scheduled_date: log.scheduledDate || null,
   user_id: log.userId,
   user_name: log.userName
 });

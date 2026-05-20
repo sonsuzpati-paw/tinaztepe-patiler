@@ -30,6 +30,9 @@ export interface Animal {
   age?: string; // yavru, genç, yetişkin, yaşlı
   location: string; // Tınaztepe kampüs bölgesi (örn: Mühendislik Fakültesi)
   locationDetails?: string; // Yakın bina, kapı girişi vb. (örn: A Blok kantin arkası)
+  lat?: number;
+  lng?: number;
+  region?: string;
   photos: string[];
   status: AnimalStatus;
   createdAt: string;
@@ -44,6 +47,8 @@ export interface LogEntry {
   title: string;
   description: string;
   date: string;
+  isScheduled?: boolean;
+  scheduledDate?: string;
   userId: string;
   userName: string;
 }

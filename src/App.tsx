@@ -16,6 +16,8 @@ import AnimalCard from './components/AnimalCard';
 import AddAnimalModal from './components/AddAnimalModal';
 import AnimalDetailModal from './components/AnimalDetailModal';
 import HelpModal from './components/HelpModal';
+import CampusMap from './components/CampusMap';
+import CampusCalendar from './components/CampusCalendar';
 import { dbService } from './supabaseService';
 import { isSupabaseConfigured } from './supabaseClient';
 import {
@@ -48,6 +50,8 @@ export default function App() {
   const [locationFilter, setLocationFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [neuterFilter, setNeuterFilter] = useState('all'); // 'all' | 'neutered' | 'not-neutered'
+  const [noResponsibleFilter, setNoResponsibleFilter] = useState(false);
 
   // --- Modals Toggle State ---
   const [selectedAnimal, setSelectedAnimal] = useState<Animal | null>(null);
@@ -260,8 +264,13 @@ export default function App() {
     const matchesType = typeFilter === 'all' || animal.type === typeFilter;
     const matchesLocation = locationFilter === 'all' || animal.location === locationFilter;
     const matchesStatus = statusFilter === 'all' || animal.status === statusFilter;
+    const matchesNeuter =
+      neuterFilter === 'all' ||
+      (neuterFilter === 'neutered' && animal.isNeutered) ||
+      (neuterFilter === 'not-neutered' && !animal.isNeutered);
+    const matchesNoResponsible = !noResponsibleFilter || animal.responsibleUserIds.length === 0;
 
-    return matchesQuery && matchesType && matchesLocation && matchesStatus;
+    return matchesQuery && matchesType && matchesLocation && matchesStatus && matchesNeuter && matchesNoResponsible;
   });
 
   // Kullanıcının kendi sorumluluğundaki hayvanlar
@@ -389,6 +398,28 @@ export default function App() {
               >
                 <ClipboardList className="w-4 h-4" />
                 📋 Sorumlu Panosu
+              </button>
+
+              <button
+                onClick={() => setActiveTab('map')}
+                className={`flex-1 py-3 text-xs sm:text-sm font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  activeTab === 'map'
+                    ? 'bg-slate-800 text-white shadow-sm'
+                    : 'bg-white text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                🗺️ Harita
+              </button>
+
+              <button
+                onClick={() => setActiveTab('calendar')}
+                className={`flex-1 py-3 text-xs sm:text-sm font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  activeTab === 'calendar'
+                    ? 'bg-slate-800 text-white shadow-sm'
+                    : 'bg-white text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                📅 Takvim
               </button>
 
               <button
@@ -523,13 +554,39 @@ export default function App() {
                       </select>
                     </div>
 
-                    {(searchQuery || typeFilter !== 'all' || locationFilter !== 'all' || statusFilter !== 'all') && (
+                     {/* Kısırlaştırma filtresi */}
+                    <div className="flex items-center gap-1">
+                      <select
+                        className="bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 text-xs outline-none focus:ring-1 focus:ring-slate-400 font-medium"
+                        value={neuterFilter}
+                        onChange={(e) => setNeuterFilter(e.target.value)}
+                      >
+                        <option value="all">Kısırlaştırma (Hepsi)</option>
+                        <option value="neutered">✂️ Kısırlaştırılmış</option>
+                        <option value="not-neutered">🔴 Kısırlaştırılmamış</option>
+                      </select>
+                    </div>
+
+                    {/* Sorumlusu olmayan filtresi */}
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none text-xs font-medium text-slate-600 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-amber-50 hover:border-amber-200 transition-colors">
+                      <input
+                        type="checkbox"
+                        className="rounded accent-amber-500"
+                        checked={noResponsibleFilter}
+                        onChange={(e) => setNoResponsibleFilter(e.target.checked)}
+                      />
+                      😿 Sahipsiz Hayvanlar
+                    </label>
+
+                    {(searchQuery || typeFilter !== 'all' || locationFilter !== 'all' || statusFilter !== 'all' || neuterFilter !== 'all' || noResponsibleFilter) && (
                       <button
                         onClick={() => {
                           setSearchQuery('');
                           setTypeFilter('all');
                           setLocationFilter('all');
                           setStatusFilter('all');
+                          setNeuterFilter('all');
+                          setNoResponsibleFilter(false);
                         }}
                         className="text-xs font-bold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg cursor-pointer transition-colors"
                       >
@@ -561,6 +618,20 @@ export default function App() {
                     ))}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* TAB: Map */}
+            {activeTab === 'map' && (
+              <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-sm">
+                <CampusMap animals={animals} onSelectAnimal={setSelectedAnimal} />
+              </div>
+            )}
+
+            {/* TAB: Calendar */}
+            {activeTab === 'calendar' && (
+              <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-sm">
+                <CampusCalendar logs={logs} animals={animals} onSelectAnimal={setSelectedAnimal} />
               </div>
             )}
 
@@ -664,6 +735,9 @@ export default function App() {
           onDeleteAnimal={handleDeleteAnimal}
           onAddLog={handleAddLog}
           onDeleteLog={handleDeleteLog}
+          onAddAlert={handleAddAlert}
+          onDeleteAlert={handleDeleteAlert}
+          alerts={alerts}
         />
       )}
 
