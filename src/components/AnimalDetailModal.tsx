@@ -32,7 +32,7 @@ interface AnimalDetailModalProps {
   animal: Animal;
   users: User[];
   logs: LogEntry[];
-  currentUser: User;
+  currentUser: User | null;
   onClose: () => void;
   onUpdateAnimal: (updatedAnimal: Animal) => void;
   onDeleteAnimal: (animalId: string) => void;
@@ -100,10 +100,14 @@ export default function AnimalDetailModal({
 
   // Sorumlu Kişi Bilgileri
   const responsibleUsers = users.filter((u) => animal.responsibleUserIds.includes(u.id));
-  const isUserResponsible = animal.responsibleUserIds.includes(currentUser.id);
+  const isUserResponsible = currentUser ? animal.responsibleUserIds.includes(currentUser.id) : false;
 
   // Toggle Responsibility
   const handleToggleResponsibility = () => {
+    if (!currentUser) {
+      alert('Gönüllü sorumluluk listesine eklenebilmek için lütfen giriş yapın!');
+      return;
+    }
     let updatedIds = [...animal.responsibleUserIds];
     if (isUserResponsible) {
       updatedIds = updatedIds.filter((id) => id !== currentUser.id);
@@ -131,8 +135,8 @@ export default function AnimalDetailModal({
       title: logTitle.trim(),
       description: logDesc.trim(),
       date: new Date().toISOString(),
-      userId: currentUser.id,
-      userName: currentUser.name
+      userId: currentUser?.id || '',
+      userName: currentUser?.name || 'Gönüllü'
     };
 
     onAddLog(newLog);
@@ -184,7 +188,7 @@ export default function AnimalDetailModal({
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {currentUser.isAdmin && (
+            {currentUser?.isAdmin && (
               <button
                 onClick={() => setShowAdminEdit(!showAdminEdit)}
                 className={`flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
@@ -482,7 +486,13 @@ export default function AnimalDetailModal({
                     </div>
 
                     <button
-                      onClick={() => setShowLogForm(!showLogForm)}
+                      onClick={() => {
+                        if (!currentUser) {
+                          alert('Gözlem günlüğü ekleyebilmek için lütfen giriş yapın!');
+                          return;
+                        }
+                        setShowLogForm(!showLogForm);
+                      }}
                       className="text-xs bg-slate-800 hover:bg-slate-700 text-white font-bold px-3 py-1.5 rounded-xl flex items-center gap-1 cursor-pointer transition-all"
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -581,7 +591,7 @@ export default function AnimalDetailModal({
                                   </h4>
                                 </div>
 
-                                {currentUser.isAdmin && (
+                                {currentUser?.isAdmin && (
                                   <button
                                     onClick={() => {
                                       if (confirm('Bu günlük girişini silmek istediğinizden emin misiniz?')) {

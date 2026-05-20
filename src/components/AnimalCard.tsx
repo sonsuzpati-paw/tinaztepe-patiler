@@ -12,7 +12,7 @@ interface AnimalCardProps {
   animal: Animal;
   users: User[];
   onSelect: (animal: Animal) => void;
-  currentUser: User;
+  currentUser: User | null;
 }
 
 export default function AnimalCard({ animal, users, onSelect, currentUser }: AnimalCardProps) {
@@ -56,7 +56,7 @@ export default function AnimalCard({ animal, users, onSelect, currentUser }: Ani
   };
 
   const statusStyles = getStatusStyles(animal.status);
-  const isUserResponsible = animal.responsibleUserIds.includes(currentUser.id);
+  const isUserResponsible = currentUser ? animal.responsibleUserIds.includes(currentUser.id) : false;
 
   return (
     <div

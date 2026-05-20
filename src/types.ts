@@ -15,6 +15,10 @@ export interface User {
   phoneNumber?: string;
   avatar: string;
   isAdmin: boolean;
+  password?: string;
+  workedPlace?: string;
+  hasVehicle?: boolean;
+  personalNotes?: string;
 }
 
 export interface Animal {

@@ -35,7 +35,7 @@ import {
 export default function App() {
   // --- Persistent Storage State ---
   const [users, setUsers] = useState<User[]>([]);
-  const [currentUser, setCurrentUser] = useState<User>(INITIAL_USERS[1]); // default to Elif
+  const [currentUser, setCurrentUser] = useState<User | null>(null); // default to guest (null)
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [alerts, setAlerts] = useState<ImportantMessage[]>([]);
@@ -76,11 +76,11 @@ export default function App() {
           const found = loadedUsers.find(u => u.id === parsed.id);
           if (found) {
             setCurrentUser(found);
-          } else if (loadedUsers.length > 0) {
-            setCurrentUser(loadedUsers[0]);
+          } else {
+            setCurrentUser(null);
           }
-        } else if (loadedUsers.length > 1) {
-          setCurrentUser(loadedUsers[1]); // Default to Elif
+        } else {
+          setCurrentUser(null); // Guest mode
         }
       } catch (err) {
         console.error('Error loading initial data:', err);
@@ -94,9 +94,13 @@ export default function App() {
 
   // --- Handlers & Actions ---
 
-  const handleUserChange = (u: User) => {
+  const handleUserChange = (u: User | null) => {
     setCurrentUser(u);
-    localStorage.setItem('tinaztepe_current_user', JSON.stringify(u));
+    if (u) {
+      localStorage.setItem('tinaztepe_current_user', JSON.stringify(u));
+    } else {
+      localStorage.removeItem('tinaztepe_current_user');
+    }
   };
 
   const handleAddUser = async (u: User) => {
@@ -109,7 +113,25 @@ export default function App() {
     }
   };
 
+  const handleUpdateUser = async (updatedUser: User) => {
+    try {
+      await dbService.saveUser(updatedUser);
+      setUsers((prev) => prev.map((u) => (u.id === updatedUser.id ? updatedUser : u)));
+      if (currentUser && currentUser.id === updatedUser.id) {
+        setCurrentUser(updatedUser);
+        localStorage.setItem('tinaztepe_current_user', JSON.stringify(updatedUser));
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Profil güncellenirken bir veritabanı hatası oluştu.');
+    }
+  };
+
   const handleAddAnimal = async (newAnimal: Animal) => {
+    if (!currentUser) {
+      alert('Yeni pati eklemek için lütfen giriş yapın.');
+      return;
+    }
     try {
       await dbService.saveAnimal(newAnimal);
       setAnimals((prev) => [newAnimal, ...prev]);
@@ -229,9 +251,9 @@ export default function App() {
   });
 
   // Kullanıcının kendi sorumluluğundaki hayvanlar
-  const myResponsibleAnimals = animals.filter((animal) =>
-    animal.responsibleUserIds.includes(currentUser.id)
-  );
+  const myResponsibleAnimals = currentUser
+    ? animals.filter((animal) => animal.responsibleUserIds.includes(currentUser.id))
+    : [];
 
   // --- Campus General Dashboard Stats ---
   const totalCats = animals.filter((a) => a.type === 'kedi').length;
@@ -313,6 +335,7 @@ export default function App() {
               onUserChange={handleUserChange}
               users={users}
               onAddUser={handleAddUser}
+              onUpdateUser={handleUpdateUser}
             />
 
             {/* Quick Informative Card */}
@@ -406,13 +429,24 @@ export default function App() {
                       />
                     </div>
 
-                    <button
-                      onClick={() => setShowAddAnimal(true)}
-                      className="cursor-pointer text-xs font-bold fill-white bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-xl flex items-center gap-1.5 shadow-sm transition-colors w-full sm:w-auto justify-center"
-                    >
-                      <Plus className="w-4.5 h-4.5" />
-                      Yeni Pati Girişi Yap
-                    </button>
+                    {currentUser ? (
+                      <button
+                        onClick={() => setShowAddAnimal(true)}
+                        className="cursor-pointer text-xs font-bold fill-white bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-xl flex items-center gap-1.5 shadow-sm transition-colors w-full sm:w-auto justify-center"
+                      >
+                        <Plus className="w-4.5 h-4.5" />
+                        Yeni Pati Girişi Yap
+                      </button>
+                    ) : (
+                      <button
+                        disabled
+                        className="text-xs font-bold bg-slate-100 text-slate-400 border border-slate-200/60 px-5 py-3 rounded-xl flex items-center gap-1.5 w-full sm:w-auto justify-center cursor-not-allowed"
+                        title="Yeni pati eklemek için lütfen giriş yapın."
+                      >
+                        <Plus className="w-4.5 h-4.5 text-slate-350" />
+                        Pati Girişi (Giriş Yapın)
+                      </button>
+                    )}
                   </div>
 
                   {/* Advanced Filters Combobox */}

@@ -9,7 +9,7 @@ import { AlertCircle, AlertTriangle, Bell, Trash2, Megaphone, Plus, MessageSquar
 
 interface ImportantAlertsProps {
   messages: ImportantMessage[];
-  currentUser: User;
+  currentUser: User | null;
   onAddMessage: (msg: ImportantMessage) => void;
   onDeleteMessage: (id: string) => void;
 }
@@ -29,8 +29,8 @@ export default function ImportantAlerts({ messages, currentUser, onAddMessage, o
       title: title.trim(),
       content: content.trim(),
       date: new Date().toISOString(),
-      userId: currentUser.id,
-      userName: currentUser.name,
+      userId: currentUser?.id || '',
+      userName: currentUser?.name || 'Gönüllü',
       urgency
     };
 
@@ -81,7 +81,13 @@ export default function ImportantAlerts({ messages, currentUser, onAddMessage, o
         </div>
 
         <button
-          onClick={() => setShowAddForm(!showAddForm)}
+          onClick={() => {
+            if (!currentUser) {
+              alert('Duyuru ekleyebilmek için lütfen giriş yapın!');
+              return;
+            }
+            setShowAddForm(!showAddForm);
+          }}
           className="flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl cursor-pointer transition-all shrink-0 shadow-sm"
         >
           <Plus className="w-4 h-4" />
@@ -178,7 +184,7 @@ export default function ImportantAlerts({ messages, currentUser, onAddMessage, o
                       </h4>
                     </div>
 
-                    {currentUser.isAdmin && (
+                    {currentUser?.isAdmin && (
                       <button
                         onClick={() => {
                           if (confirm('Bu duyuruyu silmek istediğinizden emin misiniz?')) {

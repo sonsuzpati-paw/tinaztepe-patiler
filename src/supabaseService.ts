@@ -20,7 +20,11 @@ const mapUserFromDB = (data: any): User => ({
   email: data.email,
   phoneNumber: data.phone_number || undefined,
   avatar: data.avatar || '',
-  isAdmin: data.is_admin
+  isAdmin: data.is_admin,
+  password: data.password || '123456',
+  workedPlace: data.worked_place || undefined,
+  hasVehicle: data.has_vehicle ?? false,
+  personalNotes: data.personal_notes || undefined
 });
 
 const mapUserToDB = (user: User) => ({
@@ -29,7 +33,11 @@ const mapUserToDB = (user: User) => ({
   email: user.email,
   phone_number: user.phoneNumber || null,
   avatar: user.avatar,
-  is_admin: user.isAdmin
+  is_admin: user.isAdmin,
+  password: user.password || '123456',
+  worked_place: user.workedPlace || null,
+  has_vehicle: user.hasVehicle ?? false,
+  personal_notes: user.personalNotes || null
 });
 
 const mapAnimalFromDB = (data: any): Animal => ({
@@ -120,6 +128,52 @@ const saveLocal = <T>(key: string, data: T) => {
 // --- Exported Unified Database Service ---
 
 export const dbService = {
+  // --- PHOTO UPLOAD ---
+  async uploadPhoto(file: File): Promise<string> {
+    if (!isSupabaseConfigured) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from('animal-photos')
+        .upload(filePath, file);
+
+      if (error) {
+        console.error('Error uploading photo to Supabase:', error);
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = error => reject(error);
+          reader.readAsDataURL(file);
+        });
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from('animal-photos')
+        .getPublicUrl(filePath);
+
+      return publicUrlData.publicUrl;
+    } catch (e) {
+      console.error('Unexpected error in photo upload, using base64 fallback:', e);
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+      });
+    }
+  },
+
   // --- USERS ---
   async getUsers(): Promise<User[]> {
     if (!isSupabaseConfigured) {

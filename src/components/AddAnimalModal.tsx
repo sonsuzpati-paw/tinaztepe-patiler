@@ -6,7 +6,8 @@
 import React, { useState } from 'react';
 import { Animal, AnimalType, AnimalStatus, User } from '../types';
 import { CAMPUS_LOCATIONS } from '../mockData';
-import { X, Plus, Image, PlusCircle, AlertCircle } from 'lucide-react';
+import { X, Plus, Image, PlusCircle, AlertCircle, Upload, Loader2 } from 'lucide-react';
+import { dbService } from '../supabaseService';
 
 interface AddAnimalModalProps {
   onClose: () => void;
@@ -43,6 +44,7 @@ export default function AddAnimalModal({ onClose, onAdd, currentUser }: AddAnima
   const [photoInput, setPhotoInput] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
   const [errorMsg, setErrorMsg] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleAddPhoto = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -64,6 +66,25 @@ export default function AddAnimalModal({ onClose, onAdd, currentUser }: AddAnima
 
   const handleRemovePhoto = (index: number) => {
     setPhotos(photos.filter((_, i) => i !== index));
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploading(true);
+    setErrorMsg('');
+    try {
+      const file = files[0];
+      const uploadedUrl = await dbService.uploadPhoto(file);
+      setPhotos([...photos, uploadedUrl]);
+      setErrorMsg('');
+    } catch (err) {
+      console.error(err);
+      setErrorMsg('Fotoğraf yüklenirken bir sorun oluştu.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleFormSubmit = (e: React.FormEvent) => {
@@ -321,22 +342,55 @@ export default function AddAnimalModal({ onClose, onAdd, currentUser }: AddAnima
               </div>
             </div>
 
-            <div className="flex gap-2">
-              <input
-                type="text"
-                className="flex-1 text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-slate-400 bg-white"
-                placeholder="Özel Fotoğraf Bağlantı Adresi (URL) girin..."
-                value={photoInput}
-                onChange={(e) => setPhotoInput(e.target.value)}
-              />
-              <button
-                type="button"
-                onClick={handleAddPhoto}
-                className="bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold px-3 py-2.5 rounded-xl flex items-center gap-1.5 shrink-0 cursor-pointer"
-              >
-                <PlusCircle className="w-4 h-4" />
-                Albme Ekle
-              </button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1 flex gap-2">
+                <input
+                  type="text"
+                  className="flex-1 text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-slate-400 bg-white"
+                  placeholder="Özel Fotoğraf Bağlantı Adresi (URL) girin..."
+                  value={photoInput}
+                  onChange={(e) => setPhotoInput(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={handleAddPhoto}
+                  className="bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold px-3 py-2.5 rounded-xl flex items-center gap-1.5 shrink-0 cursor-pointer"
+                >
+                  <PlusCircle className="w-4 h-4" />
+                  Ekle
+                </button>
+              </div>
+
+              <div className="relative shrink-0">
+                <input
+                  type="file"
+                  id="gallery-photo-upload"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  disabled={isUploading}
+                />
+                <label
+                  htmlFor="gallery-photo-upload"
+                  className={`w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-bold border flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                    isUploading
+                      ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+                      : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-250 hover:border-emerald-350'
+                  }`}
+                >
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-emerald-650" />
+                      Yükleniyor...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      Galeriden Seç
+                    </>
+                  )}
+                </label>
+              </div>
             </div>
 
             {/* Eklenmiş Fotoğraflar */}
