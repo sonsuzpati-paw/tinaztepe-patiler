@@ -29,7 +29,7 @@ Her hayvanın kendi profil kartı altında, tüm gönüllülerin görebileceği 
 
 ### 5. 🔒 Güvenli Yönetici Yetkilendirmesi (Admin)
 * Veri güvenliğini korumak amacıyla; kayıt silme ve mevcut bilgileri kalıcı olarak düzenleme yetkisi sadece **Yöneticilere (Admin)** verilmiştir.
-* `admin_sonsuz` kullanıcısı veya şifre kodu olan **`25204`** ile giriş yapan yöneticiler silme ve düzenleme yapabilir. Diğer gönüllüler ise veri ekleme ve güncel durum bildirimi yapabilir.
+* `admin_sonsuz` kullanıcısı  ile giriş yapan yöneticiler silme ve düzenleme yapabilir. Diğer gönüllüler ise veri ekleme ve güncel durum bildirimi yapabilir.
 
 ---
 
