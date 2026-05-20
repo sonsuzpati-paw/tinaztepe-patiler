@@ -15,6 +15,7 @@ import RecentUpdates from './components/RecentUpdates';
 import AnimalCard from './components/AnimalCard';
 import AddAnimalModal from './components/AddAnimalModal';
 import AnimalDetailModal from './components/AnimalDetailModal';
+import HelpModal from './components/HelpModal';
 import { dbService } from './supabaseService';
 import { isSupabaseConfigured } from './supabaseClient';
 import {
@@ -51,6 +52,7 @@ export default function App() {
   // --- Modals Toggle State ---
   const [selectedAnimal, setSelectedAnimal] = useState<Animal | null>(null);
   const [showAddAnimal, setShowAddAnimal] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   // Load initial data from dbService (Supabase with LocalStorage fallback)
   useEffect(() => {
@@ -124,6 +126,18 @@ export default function App() {
     } catch (err: any) {
       console.error(err);
       alert(`Profil güncellenirken bir veritabanı hatası oluştu: ${err?.message || JSON.stringify(err)}`);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!currentUser?.isAdmin) return;
+    if (!window.confirm('Bu gönüllüyü sistemden silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) return;
+    try {
+      await dbService.deleteUser(userId);
+      setUsers((prev) => prev.filter((u) => u.id !== userId));
+    } catch (err: any) {
+      console.error(err);
+      alert(`Gönüllü silinirken bir hata oluştu: ${err?.message || JSON.stringify(err)}`);
     }
   };
 
@@ -290,6 +304,14 @@ export default function App() {
                 <h1 className="text-2xl sm:text-3xl font-black tracking-tight select-none">
                   DEÜ Tınaztepe Pati Takip
                 </h1>
+                <button
+                  onClick={() => setShowHelp(true)}
+                  title="Nasıl Kullanılır?"
+                  className="ml-1 bg-white/15 hover:bg-white/30 border border-white/20 text-white rounded-xl px-2.5 py-1.5 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer shrink-0"
+                >
+                  <HelpCircle className="w-3.5 h-3.5" />
+                  Yardım
+                </button>
               </div>
               <p className="text-emerald-100 text-xs sm:text-sm font-semibold max-w-xl">
                 Dokuz Eylül Üniversitesi Tınaztepe Kampüsü&apos;ndeki can dostlarımızın beslenme, sağlık ve sorumluluk takibinde gönüllü koordinasyon kiti.
@@ -336,6 +358,7 @@ export default function App() {
               users={users}
               onAddUser={handleAddUser}
               onUpdateUser={handleUpdateUser}
+              onDeleteUser={handleDeleteUser}
             />
 
             {/* Quick Informative Card */}
@@ -642,6 +665,11 @@ export default function App() {
           onAddLog={handleAddLog}
           onDeleteLog={handleDeleteLog}
         />
+      )}
+
+      {/* 3. Help / How-To-Use Modal */}
+      {showHelp && (
+        <HelpModal onClose={() => setShowHelp(false)} />
       )}
     </div>
   );

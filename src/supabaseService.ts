@@ -129,7 +129,7 @@ const saveLocal = <T>(key: string, data: T) => {
 
 export const dbService = {
   // --- PHOTO UPLOAD ---
-  async uploadPhoto(file: File): Promise<string> {
+  async uploadPhoto(file: File, bucketName: 'animal-photos' | 'profile_photos' = 'animal-photos'): Promise<string> {
     if (!isSupabaseConfigured) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -145,11 +145,11 @@ export const dbService = {
       const filePath = `${fileName}`;
 
       const { data, error } = await supabase.storage
-        .from('animal-photos')
+        .from(bucketName)
         .upload(filePath, file);
 
       if (error) {
-        console.error('Error uploading photo to Supabase:', error);
+        console.error(`Error uploading photo to Supabase storage bucket ${bucketName}:`, error);
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = () => resolve(reader.result as string);
@@ -159,7 +159,7 @@ export const dbService = {
       }
 
       const { data: publicUrlData } = supabase.storage
-        .from('animal-photos')
+        .from(bucketName)
         .getPublicUrl(filePath);
 
       return publicUrlData.publicUrl;
@@ -205,6 +205,19 @@ export const dbService = {
       throw error;
     }
     return user;
+  },
+
+  async deleteUser(id: string): Promise<void> {
+    if (!isSupabaseConfigured) {
+      const users = getLocal<User[]>('tinaztepe_users', INITIAL_USERS);
+      saveLocal('tinaztepe_users', users.filter(u => u.id !== id));
+      return;
+    }
+    const { error } = await supabase.from('users').delete().eq('id', id);
+    if (error) {
+      console.error('Error deleting user from Supabase:', error);
+      throw error;
+    }
   },
 
   // --- ANIMALS ---

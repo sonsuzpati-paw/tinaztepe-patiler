@@ -30,6 +30,7 @@ interface ProfilePanelProps {
   users: User[];
   onAddUser: (user: User) => void;
   onUpdateUser: (user: User) => void;
+  onDeleteUser: (userId: string) => void;
 }
 
 export default function ProfilePanel({
@@ -37,7 +38,8 @@ export default function ProfilePanel({
   onUserChange,
   users,
   onAddUser,
-  onUpdateUser
+  onUpdateUser,
+  onDeleteUser
 }: ProfilePanelProps) {
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
   const [selectedUserId, setSelectedUserId] = useState<string>('');
@@ -90,7 +92,7 @@ export default function ProfilePanel({
     setErrorMsg('');
     try {
       const file = files[0];
-      const uploadedUrl = await dbService.uploadPhoto(file);
+      const uploadedUrl = await dbService.uploadPhoto(file, 'profile_photos');
       if (mode === 'register') {
         setNewAvatar(uploadedUrl);
       } else {
@@ -778,6 +780,47 @@ export default function ProfilePanel({
           })}
         </div>
       </div>
+
+      {/* Admin: Gönüllü Yönetim Paneli */}
+      {currentUser?.isAdmin && (
+        <div className="mt-5 pt-5 border-t border-red-100">
+          <h4 className="text-xs font-bold text-red-600 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+            <Shield className="w-3.5 h-3.5" /> Yönetici – Gönüllü Yönetimi
+          </h4>
+          <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
+            {users.filter(u => !u.isAdmin).map((u) => (
+              <div
+                key={u.id}
+                className="w-full flex items-center justify-between p-2.5 rounded-xl border border-slate-100 bg-slate-50/60 text-xs"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <img
+                    src={u.avatar}
+                    alt={u.name}
+                    className="w-7 h-7 rounded-full object-cover border border-slate-200 bg-white shrink-0"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div className="min-w-0">
+                    <p className="font-bold text-slate-800 truncate max-w-[110px]">{u.name}</p>
+                    <p className="text-[9px] text-slate-400 truncate max-w-[110px]">{u.email}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => onDeleteUser(u.id)}
+                  title={`${u.name} adlı gönüllüyü sil`}
+                  className="ml-2 shrink-0 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-[9px] font-bold px-2 py-1 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                >
+                  <LogOut className="w-3 h-3" />
+                  Sil
+                </button>
+              </div>
+            ))}
+            {users.filter(u => !u.isAdmin).length === 0 && (
+              <p className="text-[10px] text-slate-400 text-center py-2">Henüz kayıtlı gönüllü yok.</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
