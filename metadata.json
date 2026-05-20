@@ -1,0 +1,6 @@
+{
+  "name": "DEÜ Tınaztepe Pati Takip",
+  "description": "Dokuz Eylül Üniversitesi Tınaztepe Kampüsü'ndeki kedi ve köpeklerin beslenme, tedavi, sağlık ve sorumluluk takibini kolaylaştıran topluluk platformu.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
